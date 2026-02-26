@@ -30,4 +30,4 @@ To install this extension manually in Google Chrome:
 
 1. Download or clone this repository to your local machine.
    ```bash
-   git clone [https://github.com/yourusername/hvs-shorts-extended.git](https://github.com/yourusername/hvs-shorts-extended.git)
+   git clone [https://github.com/HarshVardhanSolanki/hvs-shorts-extended.git](https://github.com/HarshVardhanSolanki/hvs-shorts-extended.git)
