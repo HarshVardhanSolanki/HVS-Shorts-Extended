@@ -1,10 +1,9 @@
 let indicatorTimer;
 
-// Function to create and show the circular indicator
+// Function to create and show the circular indicator (bilkul same)
 function showIndicator(direction) {
     let indicator = document.getElementById('hvs-skip-indicator');
     
-    // Create the indicator element and its styles if it doesn't exist yet
     if (!indicator) {
         indicator = document.createElement('div');
         indicator.id = 'hvs-skip-indicator';
@@ -42,69 +41,70 @@ function showIndicator(direction) {
         document.head.appendChild(style);
     }
 
-    // Set the text and icon based on the direction
     if (direction === 'forward') {
         indicator.innerHTML = '<div class="hvs-icon">↻</div><div>+3%</div>';
     } else if (direction === 'backward') {
         indicator.innerHTML = '<div class="hvs-icon">↺</div><div>-3%</div>';
     }
 
-    // Show the indicator
     indicator.style.opacity = '1';
-    
-    // Clear any existing timer to prevent flickering if keys are mashed
     clearTimeout(indicatorTimer);
-    
-    // Hide the indicator after 500 milliseconds
     indicatorTimer = setTimeout(() => {
         indicator.style.opacity = '0';
     }, 500);
 }
 
-// Keydown event listener with capture phase (true) to override YouTube's defaults
+// Keydown listener with improved video selection
 document.addEventListener('keydown', function(event) {
-    // Only execute if we are actually watching a Short
-    if (!window.location.pathname.includes('/shorts/')) {
-        return;
-    }
+    if (!window.location.pathname.includes('/shorts/')) return;
 
-    // Prevent the script from triggering if you are typing in the comments or search
     const activeElement = document.activeElement;
     if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable)) {
         return;
     }
 
-    // Check if the pressed key is the Left or Right Arrow
     if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
-        
-        // Block YouTube from doing its default behavior
         event.stopPropagation();
         event.preventDefault();
         
-        // Find all video elements on the page
+        // IMPROVED: Sirf Shorts wala bada video select karo
         const videos = Array.from(document.querySelectorAll('video'));
-        
-        // Find the video that is actually in view and ready to play
-        let activeVideo = videos.find(v => {
+        let activeVideo = null;
+        let maxArea = -1;
+
+        videos.forEach(v => {
+            if (v.readyState < 1) return;
+            
+            // Miniplayer ignore karo
+            if (v.closest('ytd-miniplayer') || v.closest('.miniplayer') || v.closest('.ytp-miniplayer')) return;
+            
             const rect = v.getBoundingClientRect();
-            return rect.top >= -100 && rect.bottom <= (window.innerHeight + 100) && v.readyState > 0;
+            
+            // Shorts video hamesha bada aur center mein hota hai
+            if (rect.top >= -150 && 
+                rect.bottom <= window.innerHeight + 150 && 
+                rect.height > 350 && rect.width > 250) {   // yeh threshold perfect hai
+                
+                const area = rect.width * rect.height;
+                if (area > maxArea) {
+                    maxArea = area;
+                    activeVideo = v;
+                }
+            }
         });
 
-        // Fallback: If position check fails, grab the one that is currently playing
+        // Fallback agar kuch nahi mila
         if (!activeVideo && videos.length > 0) {
             activeVideo = videos.find(v => !v.paused) || videos[0];
         }
 
         if (activeVideo && !isNaN(activeVideo.duration)) {
-            // Calculate exactly 3% of the video's total duration
             const skipAmount = activeVideo.duration * 0.03;
             
             if (event.key === 'ArrowRight') {
-                // Skip forward by 3%
                 activeVideo.currentTime = Math.min(activeVideo.currentTime + skipAmount, activeVideo.duration);
                 showIndicator('forward');
             } else if (event.key === 'ArrowLeft') {
-                // Skip backward by 3%
                 activeVideo.currentTime = Math.max(activeVideo.currentTime - skipAmount, 0);
                 showIndicator('backward');
             }
